@@ -4,6 +4,7 @@ import subprocess
 from dotenv import load_dotenv
 
 load_dotenv()
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 try:
     from huggingface_hub import HfApi, snapshot_download
@@ -56,7 +57,8 @@ def process_movie(movie_id):
                 repo_id=repo_id, 
                 repo_type="dataset", 
                 local_dir=movie_dir,
-                allow_patterns=["*.png", "*.m3u8"] # only download pngs and the index to save time
+                allow_patterns=["*.png", "*.m3u8"], # only download pngs and the index to save time
+                max_workers=4
             )
         except Exception as e:
             print(f"[{movie_id}] Failed to download repo {repo_id}: {e}")
@@ -152,10 +154,16 @@ if __name__ == "__main__":
             lines = [line.strip() for line in f if line.strip()]
         
         print(f"Found {len(lines)} IDs to process in {input_file}.")
-        for i, m_id in enumerate(lines, 1):
-            print(f"\n--- Processing {i}/{len(lines)}: {m_id} ---")
+        lines_to_process = list(lines)
+        for i, m_id in enumerate(lines_to_process, 1):
+            print(f"\n--- Processing {i}/{len(lines_to_process)}: {m_id} ---")
             success = process_movie(m_id)
-            if not success:
+            if success:
+                lines.remove(m_id)
+                with open(input_file, 'w') as f:
+                    for remaining_m_id in lines:
+                        f.write(f"{remaining_m_id}\n")
+            else:
                 print(f"Warning: Processing failed for {m_id}. Moving to next.")
     else:
         print(f"{input_file} not found. Please create it with movie IDs to process.")
