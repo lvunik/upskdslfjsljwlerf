@@ -58,7 +58,7 @@ def process_movie(movie_id):
                 repo_type="dataset", 
                 local_dir=movie_dir,
                 allow_patterns=["*.png", "*.m3u8"], # only download pngs and the index to save time
-                max_workers=4
+                max_workers=16
             )
         except Exception as e:
             print(f"[{movie_id}] Failed to download repo {repo_id}: {e}")
