@@ -1,0 +1,7 @@
+ffmpeg -i ./orig/index.m3u8 \
+  -c copy \
+  -hls_key_info_file ./enc.keyinfo \
+  -hls_flags independent_segments \
+  -hls_start_number 0 \
+  -hls_segment_filename "./movie/%03d.ts" \
+  ./movie/index.m3u8
