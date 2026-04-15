@@ -44,11 +44,13 @@ def process_movie(movie_id):
     movie_dir = "./movie"
     temp_enc_dir = "./temp_enc"
     
-    # 1. Clean up local directories if they exist
-    for d in [movie_dir, temp_enc_dir]:
-        if os.path.exists(d):
-            shutil.rmtree(d)
-        os.makedirs(d, exist_ok=True)
+    # 1. Prepare local directories
+    # We DO NOT clear movie_dir so Hugging Face can resume interrupted downloads.
+    # We DO clear temp_enc_dir so ffmpeg always has a clean slate.
+    if os.path.exists(temp_enc_dir):
+        shutil.rmtree(temp_enc_dir)
+    os.makedirs(movie_dir, exist_ok=True)
+    os.makedirs(temp_enc_dir, exist_ok=True)
             
     try:
         print(f"[{movie_id}] Downloading repo {repo_id} to {movie_dir}...")
@@ -135,10 +137,8 @@ def process_movie(movie_id):
             print(f"[{movie_id}] Failed to delete old .png files: {e}")
             
         print(f"[{movie_id}] Successfully finished processing.")
-        return True
-
-    finally:
-        # 6. Cleanup locally in ALL cases
+        
+        # 6. Cleanup locally ONLY upon complete success
         print(f"[{movie_id}] Cleaning up local directories...")
         for d in [movie_dir, temp_enc_dir]:
             if os.path.exists(d):
@@ -146,6 +146,12 @@ def process_movie(movie_id):
                     shutil.rmtree(d)
                 except Exception as e:
                     print(f"[{movie_id}] Local cleanup warning for {d}: {e}")
+                    
+        return True
+        
+    except Exception as e:
+        print(f"[{movie_id}] Unexpected error in process_movie: {e}")
+        return False
 
 if __name__ == "__main__":
     input_file = "input.txt"
